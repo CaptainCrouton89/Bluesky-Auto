@@ -1,3 +1,5 @@
+"use client";
+
 import PostTextButton from "@/components/PostText";
 import { Button } from "@/components/ui/button";
 import { bskyLogin } from "@/lib/bsky/oauth";

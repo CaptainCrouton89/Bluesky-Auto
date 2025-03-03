@@ -1,3 +1,6 @@
+// Check if we're in a browser environment
+const isBrowser = typeof window !== "undefined";
+
 // Import modules dynamically
 let XRPC: any;
 let OAuthUserAgent: any;
@@ -18,6 +21,8 @@ declare global {
 
 // Initialize modules
 async function initModules() {
+  if (!isBrowser) return;
+
   const clientModule = await import("@atcute/client");
   const oauthModule = await import("@atcute/oauth-browser-client");
 
@@ -44,6 +49,13 @@ const APP_URL = "https://bsky-auto.vercel.app/";
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function bskyLogin() {
+  if (!isBrowser) return;
+
+  // Initialize modules if not already initialized
+  if (!XRPC) {
+    await initModules();
+  }
+
   const usernameElement = document.getElementById("username");
   if (!usernameElement) return;
   const username = (usernameElement as HTMLInputElement).value;
@@ -58,6 +70,8 @@ export async function bskyLogin() {
 }
 
 async function finalize() {
+  if (!isBrowser) return null;
+
   const params = new URLSearchParams(location.hash.slice(1));
   history.replaceState(null, "", location.pathname + location.search);
   const session = await finalizeAuthorization(params);
@@ -100,6 +114,8 @@ function display(follows: any[]) {
 }
 
 async function handleOauth() {
+  if (!isBrowser) return;
+
   if (!location.href.includes("state")) {
     return;
   }
@@ -109,6 +125,8 @@ async function handleOauth() {
 }
 
 async function restoreSession() {
+  if (!isBrowser) return;
+
   const sessions = localStorage.getItem("atcute-oauth:sessions");
   if (!sessions) {
     return;
@@ -120,13 +138,26 @@ async function restoreSession() {
   window.agent = agent;
 }
 
-document.addEventListener("DOMContentLoaded", async function () {
-  await initModules(); // Initialize modules first
-  await handleOauth();
-  await restoreSession();
-  if (!(window as any).xrpc) {
-    return;
-  }
-  const follows = await getFollowing((window as any).xrpc);
-  display(follows);
-});
+// Only run in browser environment
+if (typeof window !== "undefined") {
+  document.addEventListener("DOMContentLoaded", async function () {
+    await initModules(); // Initialize modules first
+    await handleOauth();
+    await restoreSession();
+    if (!window.xrpc) {
+      return;
+    }
+    const follows = await getFollowing(window.xrpc);
+    display(follows);
+  });
+}
+
+// Define login function for window assignment
+function login() {
+  bskyLogin();
+}
+
+// Assign login function to window
+if (isBrowser) {
+  window.login = login;
+}
