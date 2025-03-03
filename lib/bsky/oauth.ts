@@ -38,12 +38,12 @@ async function initModules() {
   });
 }
 
-const APP_URL = "https://bsky-oauth-example.jvns.ca";
+const APP_URL = "https://bsky-auto.vercel.app/";
 
 // Add sleep function
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function login() {
+export async function bskyLogin() {
   const usernameElement = document.getElementById("username");
   if (!usernameElement) return;
   const username = (usernameElement as HTMLInputElement).value;
@@ -64,9 +64,6 @@ async function finalize() {
   const agent = new OAuthUserAgent(session);
   return agent;
 }
-
-// Assign login function to window
-window.login = login;
 
 //export interface XRPCRequestOptions {
 //	type: 'get' | 'post';
