@@ -19,6 +19,25 @@ export async function postText(text: string, facets: any[] = []): Promise<any> {
   }
 }
 
+export async function getFollowers(username: string, token: string) {
+  try {
+    const followers = await fetch(
+      `https://bsky.social/xrpc/app.bsky.feed.getFollowers?actor=${username}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    const data = await followers.json();
+    console.log(data);
+    return data;
+  } catch (error) {
+    console.error("Error posting meme:", error);
+    return null;
+  }
+}
+
 /**
  * Finds all hashtags in a text and returns their byte indices
  * @param text The text to search for hashtags

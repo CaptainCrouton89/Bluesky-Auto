@@ -55,19 +55,6 @@ export async function finalize() {
   return agent;
 }
 
-// Get following list - returns data instead of manipulating DOM
-export async function getFollowing(xrpc: any) {
-  const following = await xrpc.request({
-    type: "get",
-    nsid: "app.bsky.graph.getFollows",
-    params: {
-      actor: xrpc.handler.session.info.sub,
-      limit: 5,
-    },
-  });
-  return following.data.follows;
-}
-
 // Handle OAuth redirect - can be used in a useEffect
 export async function handleOauth() {
   if (!isBrowser) return null;
@@ -76,10 +63,7 @@ export async function handleOauth() {
     return null;
   }
 
-  const agent = await finalize();
-  const xrpc = new XRPC({ handler: agent });
-
-  return { agent, xrpc };
+  return await finalize();
 }
 
 // Restore session from localStorage - can be used in a useEffect
@@ -94,16 +78,13 @@ export async function restoreSession() {
   const did = Object.keys(JSON.parse(sessions))[0];
   const session = await getSession(did, { allowStale: true });
   const agent = new OAuthUserAgent(session);
-  const xrpc = new XRPC({ handler: agent });
 
-  return { agent, xrpc };
+  return { agent };
 }
 
 // Interface for the return value of useBlueskyAuth
 interface BlueskyAuthHook {
   agent: any;
-  xrpc: any;
-  follows: any[];
   usernameRef: RefObject<HTMLInputElement | null>;
   login: () => Promise<void>;
   isLoading: boolean;
@@ -115,9 +96,7 @@ export function useBlueskyAuth(
   usernameRef: RefObject<HTMLInputElement | null>
 ): BlueskyAuthHook {
   const [agent, setAgent] = useState<any>(null);
-  const [xrpc, setXrpc] = useState<any>(null);
-  const [follows, setFollows] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const init = async () => {
@@ -125,16 +104,14 @@ export function useBlueskyAuth(
       await initModules();
 
       // Check if we're in an OAuth redirect
-      const oauthResult = await handleOauth();
-      if (oauthResult) {
-        setAgent(oauthResult.agent);
-        setXrpc(oauthResult.xrpc);
+      const agent = await handleOauth();
+      if (agent) {
+        setAgent(agent);
       } else {
         // Try to restore from session
         const sessionResult = await restoreSession();
         if (sessionResult) {
           setAgent(sessionResult.agent);
-          setXrpc(sessionResult.xrpc);
         }
       }
       setIsLoading(false);
@@ -142,24 +119,6 @@ export function useBlueskyAuth(
 
     init();
   }, []);
-
-  // Fetch following when xrpc is available
-  useEffect(() => {
-    const fetchFollowing = async () => {
-      if (xrpc) {
-        try {
-          const followingData = await getFollowing(xrpc);
-          setFollows(followingData);
-        } catch (error) {
-          console.error("Error fetching following:", error);
-        }
-      }
-    };
-
-    if (xrpc) {
-      fetchFollowing();
-    }
-  }, [xrpc]);
 
   // Login function
   const login = async () => {
@@ -175,26 +134,11 @@ export function useBlueskyAuth(
 
   return {
     agent,
-    xrpc,
-    follows,
     usernameRef,
     login,
     isLoading,
     isLoggedIn: !!agent,
   };
-}
-
-// Helper function to format follows data for display in React components
-export function formatFollows(follows: any[]): Array<{
-  handle: string;
-  displayName: string;
-  avatar: string;
-}> {
-  return follows.map((follow) => ({
-    handle: follow.handle,
-    displayName: follow.displayName,
-    avatar: follow.avatar,
-  }));
 }
 
 // Remove any remaining non-React code

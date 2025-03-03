@@ -1,11 +1,11 @@
 import { findHashtags, postText } from "@/lib/bsky/bsky";
-import { workflow } from "@/lib/langgraph/news/newsGraph";
+import { getSocialMediaPostWorkflow } from "@/lib/langgraph/news/newsGraph";
 import { showRepresentation } from "@/lib/langgraph/utils";
 import { BaseMessage, HumanMessage } from "@langchain/core/messages";
 import { MemorySaver } from "@langchain/langgraph";
 import { NextResponse } from "next/server";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
     // const news = await searchNews("Trump");
 
@@ -16,8 +16,11 @@ export async function POST() {
     //   .join("\n");
 
     // console.log(allNews);
+    const { text } = await request.json();
 
     const checkpointConfig = { configurable: { thread_id: "my-thread" } };
+
+    const workflow = await getSocialMediaPostWorkflow(text);
 
     const newsGraph = workflow.compile({ checkpointer: new MemorySaver() });
 

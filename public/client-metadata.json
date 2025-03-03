@@ -1,7 +1,10 @@
 {
-  "client_id": "https://bsky-auto.vercel.app/client-metadata.json",
-  "client_uri": "https://bsky-auto.vercel.app",
-  "redirect_uris": ["https://bsky-auto.vercel.app"],
+  "client_id": "https://isx9y9-ip-136-24-64-186.tunnelmole.net/client-metadata.json",
+  "client_uri": "https://isx9y9-ip-136-24-64-186.tunnelmole.net",
+  "redirect_uris": [
+    "https://isx9y9-ip-136-24-64-186.tunnelmole.net",
+    "https://isx9y9-ip-136-24-64-186.tunnelmole.net/protected/bsky"
+  ],
   "application_type": "web",
   "client_name": "bsky-auto",
   "dpop_bound_access_tokens": true,

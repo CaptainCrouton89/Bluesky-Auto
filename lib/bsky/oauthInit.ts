@@ -36,7 +36,7 @@ export async function initModules() {
   configureOAuth({
     metadata: {
       client_id: `${APP_URL}/client-metadata.json`,
-      redirect_uri: `${APP_URL}`,
+      redirect_uri: `${APP_URL}/protected/bsky`,
     },
   });
 
@@ -51,4 +51,4 @@ export async function initModules() {
   };
 }
 
-const APP_URL = "https://bsky-auto.vercel.app";
+const APP_URL = "https://isx9y9-ip-136-24-64-186.tunnelmole.net";

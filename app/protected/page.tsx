@@ -1,4 +1,3 @@
-import PostTextButton from "@/components/PostText";
 import ProtectedApiButton from "@/components/ProtectedApiButton";
 import SubscribeComponent from "@/components/subscribe";
 import { createClient } from "@/utils/supabase/server";
@@ -34,10 +33,6 @@ export default async function ProtectedPage() {
       <div className="flex flex-col gap-2 items-start">
         <h2 className="font-bold text-2xl mb-4">Protected API Access</h2>
         <ProtectedApiButton />
-      </div>
-      <div>
-        <h3>Here</h3>
-        <PostTextButton />
       </div>
       <div>
         <h2 className="font-bold text-2xl mb-4">Next steps</h2>
