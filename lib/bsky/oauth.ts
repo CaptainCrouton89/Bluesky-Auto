@@ -1,54 +1,27 @@
 // Check if we're in a browser environment
 const isBrowser = typeof window !== "undefined";
 
-// Import modules dynamically
-let XRPC: any;
-let OAuthUserAgent: any;
-let configureOAuth: any;
-let createAuthorizationUrl: any;
-let finalizeAuthorization: any;
-let getSession: any;
-let resolveFromIdentity: any;
-
-// Declare global variables
-declare global {
-  interface Window {
-    login: any;
-    xrpc: any;
-    agent: any;
-  }
-}
-
-// Initialize modules
-async function initModules() {
-  if (!isBrowser) return;
-
-  const clientModule = await import("@atcute/client");
-  const oauthModule = await import("@atcute/oauth-browser-client");
-
-  XRPC = clientModule.XRPC;
-  OAuthUserAgent = oauthModule.OAuthUserAgent;
-  configureOAuth = oauthModule.configureOAuth;
-  createAuthorizationUrl = oauthModule.createAuthorizationUrl;
-  finalizeAuthorization = oauthModule.finalizeAuthorization;
-  getSession = oauthModule.getSession;
-  resolveFromIdentity = oauthModule.resolveFromIdentity;
-
-  // Configure OAuth after imports are ready
-  configureOAuth({
-    metadata: {
-      client_id: `${APP_URL}/client-metadata.json`,
-      redirect_uri: `${APP_URL}`,
-    },
-  });
-}
-
-const APP_URL = "https://bsky-auto.vercel.app/";
+// Import React types
+import { RefObject, useEffect, useState } from "react";
+import {
+  createAuthorizationUrl,
+  finalizeAuthorization,
+  getSession,
+  initModules,
+  OAuthUserAgent,
+  resolveFromIdentity,
+  XRPC,
+} from "./oauthInit";
 
 // Add sleep function
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export async function bskyLogin() {
+// Initialize modules
+
+// React-compatible login function that takes a username ref instead of accessing DOM directly
+export async function bskyLogin(
+  usernameRef: RefObject<HTMLInputElement | null>
+) {
   if (!isBrowser) return;
 
   // Initialize modules if not already initialized
@@ -56,20 +29,23 @@ export async function bskyLogin() {
     await initModules();
   }
 
-  const usernameElement = document.getElementById("username");
-  if (!usernameElement) return;
-  const username = (usernameElement as HTMLInputElement).value;
+  // Use the ref instead of document.getElementById
+  if (!usernameRef.current) return;
+  const username = usernameRef.current.value;
+
   const { identity, metadata } = await resolveFromIdentity(username);
   const authUrl = await createAuthorizationUrl({
     metadata: metadata,
     identity: identity,
     scope: "atproto transition:generic transition:chat.bsky",
   });
+
   window.location.assign(authUrl);
   await sleep(200);
 }
 
-async function finalize() {
+// Finalize OAuth process - can be called in a useEffect when detecting OAuth redirect
+export async function finalize() {
   if (!isBrowser) return null;
 
   const params = new URLSearchParams(location.hash.slice(1));
@@ -79,85 +55,150 @@ async function finalize() {
   return agent;
 }
 
-//export interface XRPCRequestOptions {
-//	type: 'get' | 'post';
-//	nsid: string;
-//	headers?: HeadersInit;
-//	params?: Record<string, unknown>;
-//	data?: FormData | Blob | ArrayBufferView | Record<string, unknown>;
-//	signal?: AbortSignal;
-//}
-async function getFollowing(xrpc: any) {
+// Get following list - returns data instead of manipulating DOM
+export async function getFollowing(xrpc: any) {
   const following = await xrpc.request({
     type: "get",
     nsid: "app.bsky.graph.getFollows",
     params: {
-      actor: window.agent.session.info.sub,
+      actor: xrpc.handler.session.info.sub,
       limit: 5,
     },
   });
   return following.data.follows;
 }
 
-function display(follows: any[]) {
-  // create new <ul>
-  const list = document.createElement("ul");
-  for (const follow of follows) {
-    const item = document.createElement("li");
-    item.textContent = follow.handle;
-    list.appendChild(item);
-  }
-  const followingElement = document.getElementById("following");
-  if (!followingElement) return;
-  followingElement.textContent = "5 people you're following:";
-  followingElement.appendChild(list);
-}
-
-async function handleOauth() {
-  if (!isBrowser) return;
+// Handle OAuth redirect - can be used in a useEffect
+export async function handleOauth() {
+  if (!isBrowser) return null;
 
   if (!location.href.includes("state")) {
-    return;
+    return null;
   }
+
   const agent = await finalize();
-  window.xrpc = new XRPC({ handler: agent });
-  window.agent = agent;
+  const xrpc = new XRPC({ handler: agent });
+
+  return { agent, xrpc };
 }
 
-async function restoreSession() {
-  if (!isBrowser) return;
+// Restore session from localStorage - can be used in a useEffect
+export async function restoreSession() {
+  if (!isBrowser) return null;
 
   const sessions = localStorage.getItem("atcute-oauth:sessions");
   if (!sessions) {
-    return;
+    return null;
   }
+
   const did = Object.keys(JSON.parse(sessions))[0];
   const session = await getSession(did, { allowStale: true });
   const agent = new OAuthUserAgent(session);
-  window.xrpc = new XRPC({ handler: agent });
-  window.agent = agent;
+  const xrpc = new XRPC({ handler: agent });
+
+  return { agent, xrpc };
 }
 
-// Only run in browser environment
-if (typeof window !== "undefined") {
-  document.addEventListener("DOMContentLoaded", async function () {
-    await initModules(); // Initialize modules first
-    await handleOauth();
-    await restoreSession();
-    if (!window.xrpc) {
-      return;
+// Interface for the return value of useBlueskyAuth
+interface BlueskyAuthHook {
+  agent: any;
+  xrpc: any;
+  follows: any[];
+  usernameRef: RefObject<HTMLInputElement | null>;
+  login: () => Promise<void>;
+  isLoading: boolean;
+  isLoggedIn: boolean;
+}
+
+// React hook to handle Bluesky authentication
+export function useBlueskyAuth(
+  usernameRef: RefObject<HTMLInputElement | null>
+): BlueskyAuthHook {
+  const [agent, setAgent] = useState<any>(null);
+  const [xrpc, setXrpc] = useState<any>(null);
+  const [follows, setFollows] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    const init = async () => {
+      setIsLoading(true);
+      await initModules();
+
+      // Check if we're in an OAuth redirect
+      const oauthResult = await handleOauth();
+      if (oauthResult) {
+        setAgent(oauthResult.agent);
+        setXrpc(oauthResult.xrpc);
+      } else {
+        // Try to restore from session
+        const sessionResult = await restoreSession();
+        if (sessionResult) {
+          setAgent(sessionResult.agent);
+          setXrpc(sessionResult.xrpc);
+        }
+      }
+      setIsLoading(false);
+    };
+
+    init();
+  }, []);
+
+  // Fetch following when xrpc is available
+  useEffect(() => {
+    const fetchFollowing = async () => {
+      if (xrpc) {
+        try {
+          const followingData = await getFollowing(xrpc);
+          setFollows(followingData);
+        } catch (error) {
+          console.error("Error fetching following:", error);
+        }
+      }
+    };
+
+    if (xrpc) {
+      fetchFollowing();
     }
-    const follows = await getFollowing(window.xrpc);
-    display(follows);
-  });
+  }, [xrpc]);
+
+  // Login function
+  const login = async () => {
+    setIsLoading(true);
+    try {
+      await bskyLogin(usernameRef);
+    } catch (error) {
+      console.error("Login error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return {
+    agent,
+    xrpc,
+    follows,
+    usernameRef,
+    login,
+    isLoading,
+    isLoggedIn: !!agent,
+  };
 }
 
-// Define login function for window assignment
-function login() {
-  bskyLogin();
+// Helper function to format follows data for display in React components
+export function formatFollows(follows: any[]): Array<{
+  handle: string;
+  displayName: string;
+  avatar: string;
+}> {
+  return follows.map((follow) => ({
+    handle: follow.handle,
+    displayName: follow.displayName,
+    avatar: follow.avatar,
+  }));
 }
 
-// Assign login function to window
-if (isBrowser) {
-  window.login = login;
+// Remove any remaining non-React code
+if (typeof window !== "undefined") {
+  // Initialize modules when the file is imported
+  initModules();
 }
