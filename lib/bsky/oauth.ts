@@ -1,24 +1,52 @@
-import { XRPC } from "@atcute/client";
-import {
-  OAuthUserAgent,
-  configureOAuth,
-  createAuthorizationUrl,
-  finalizeAuthorization,
-  getSession,
-  resolveFromIdentity,
-} from "@atcute/oauth-browser-client";
+// Import modules dynamically
+let XRPC: any;
+let OAuthUserAgent: any;
+let configureOAuth: any;
+let createAuthorizationUrl: any;
+let finalizeAuthorization: any;
+let getSession: any;
+let resolveFromIdentity: any;
+
+// Declare global variables
+declare global {
+  interface Window {
+    login: any;
+    xrpc: any;
+    agent: any;
+  }
+}
+
+// Initialize modules
+async function initModules() {
+  const clientModule = await import("@atcute/client");
+  const oauthModule = await import("@atcute/oauth-browser-client");
+
+  XRPC = clientModule.XRPC;
+  OAuthUserAgent = oauthModule.OAuthUserAgent;
+  configureOAuth = oauthModule.configureOAuth;
+  createAuthorizationUrl = oauthModule.createAuthorizationUrl;
+  finalizeAuthorization = oauthModule.finalizeAuthorization;
+  getSession = oauthModule.getSession;
+  resolveFromIdentity = oauthModule.resolveFromIdentity;
+
+  // Configure OAuth after imports are ready
+  configureOAuth({
+    metadata: {
+      client_id: `${APP_URL}/client-metadata.json`,
+      redirect_uri: `${APP_URL}`,
+    },
+  });
+}
 
 const APP_URL = "https://bsky-oauth-example.jvns.ca";
 
-configureOAuth({
-  metadata: {
-    client_id: `${APP_URL}/client-metadata.json`,
-    redirect_uri: `${APP_URL}`,
-  },
-});
+// Add sleep function
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function login() {
-  const username = document.getElementById("username").value;
+  const usernameElement = document.getElementById("username");
+  if (!usernameElement) return;
+  const username = (usernameElement as HTMLInputElement).value;
   const { identity, metadata } = await resolveFromIdentity(username);
   const authUrl = await createAuthorizationUrl({
     metadata: metadata,
@@ -37,6 +65,7 @@ async function finalize() {
   return agent;
 }
 
+// Assign login function to window
 window.login = login;
 
 //export interface XRPCRequestOptions {
@@ -47,19 +76,19 @@ window.login = login;
 //	data?: FormData | Blob | ArrayBufferView | Record<string, unknown>;
 //	signal?: AbortSignal;
 //}
-async function getFollowing(xrpc) {
+async function getFollowing(xrpc: any) {
   const following = await xrpc.request({
     type: "get",
     nsid: "app.bsky.graph.getFollows",
     params: {
-      actor: agent.session.info.sub,
+      actor: window.agent.session.info.sub,
       limit: 5,
     },
   });
   return following.data.follows;
 }
 
-function display(follows) {
+function display(follows: any[]) {
   // create new <ul>
   const list = document.createElement("ul");
   for (const follow of follows) {
@@ -67,9 +96,10 @@ function display(follows) {
     item.textContent = follow.handle;
     list.appendChild(item);
   }
-  document.getElementById("following").textContent =
-    "5 people you're following:";
-  document.getElementById("following").appendChild(list);
+  const followingElement = document.getElementById("following");
+  if (!followingElement) return;
+  followingElement.textContent = "5 people you're following:";
+  followingElement.appendChild(list);
 }
 
 async function handleOauth() {
@@ -94,11 +124,12 @@ async function restoreSession() {
 }
 
 document.addEventListener("DOMContentLoaded", async function () {
+  await initModules(); // Initialize modules first
   await handleOauth();
   await restoreSession();
-  if (!window.xrpc) {
+  if (!(window as any).xrpc) {
     return;
   }
-  const follows = await getFollowing(xrpc);
+  const follows = await getFollowing((window as any).xrpc);
   display(follows);
 });
