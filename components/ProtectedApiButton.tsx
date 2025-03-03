@@ -15,7 +15,6 @@ export default function ProtectedApiButton() {
       setError(null);
 
       const res = await api.get("/api/protected");
-      console.log(res);
 
       setResponse(JSON.stringify(res.data, null, 2));
     } catch (err) {
