@@ -36,6 +36,7 @@
     "prettier": "^3.3.3",
     "react": "19.0.0",
     "react-dom": "19.0.0",
+    "react-hot-toast": "^2.5.2",
     "sharp": "^0.33.2",
     "stripe": "^17.7.0",
     "zod": "^3.24.2"

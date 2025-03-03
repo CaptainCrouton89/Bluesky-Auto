@@ -7,7 +7,7 @@ export async function searchNews(query: string) {
   const result = await client.search(query, {
     topic: "news",
     searchDepth: "advanced",
-    maxResults: 5,
+    maxResults: 7,
     timeRange: "day",
   });
   return result;
@@ -29,7 +29,13 @@ const extractSchema = z.object({
 export const extractContentTool = tool(
   async (input: { url: string }): Promise<string> => {
     const response = await client.extract([input.url], {});
-    return response.results[0].rawContent;
+    try {
+      return response.results[0].rawContent;
+    } catch (error) {
+      console.error(error);
+      console.log(response);
+      return "No content found";
+    }
   },
   {
     name: "extract",

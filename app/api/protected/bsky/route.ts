@@ -60,28 +60,11 @@ export async function POST(request: Request) {
     // Find all hashtags in the post and create facets for them
     const facets = findHashtags(post);
 
-    // If no hashtags were found, add a default #meme hashtag
-    if (facets.length === 0) {
-      // Append the hashtag to the post
-      const updatedPost = `${post}`;
-      // Find the byte indices for the appended hashtag
-      const facetsWithDefault = findHashtags(updatedPost);
-
-      const result = await postText(updatedPost, facetsWithDefault);
-      return NextResponse.json(
-        {
-          message: "Text posted successfully",
-          result: snapshot.values.messages[snapshot.values.messages.length - 1],
-        },
-        { status: 200 }
-      );
-    }
-
     const result = await postText(post, facets);
     return NextResponse.json(
       {
         message: "Text posted successfully",
-        result: snapshot.values.messages[snapshot.values.messages.length - 1],
+        result: post,
       },
       { status: 200 }
     );

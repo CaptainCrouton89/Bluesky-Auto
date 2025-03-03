@@ -1,4 +1,4 @@
-import { model } from "@/lib/model";
+import { miniModel } from "@/lib/model";
 import {
   ChatPromptTemplate,
   MessagesPlaceholder,
@@ -14,6 +14,6 @@ const prompt = ChatPromptTemplate.fromMessages([
   new MessagesPlaceholder("messages"),
 ]);
 
-const commentGenerationChain = prompt.pipe(model);
+const commentGenerationChain = prompt.pipe(miniModel);
 
 export { commentGenerationChain };

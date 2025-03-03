@@ -1,27 +1,7 @@
 import { HumanMessage } from "@langchain/core/messages";
-import {
-  ChatPromptTemplate,
-  MessagesPlaceholder,
-} from "@langchain/core/prompts";
 import { RunnableLambda } from "@langchain/core/runnables";
-import { ChatOpenAI } from "@langchain/openai";
 
 import { extractContentTool } from "@/lib/tavily";
-
-const model = new ChatOpenAI({
-  model: "gpt-4o-mini",
-  temperature: 0,
-});
-
-const prompt = ChatPromptTemplate.fromMessages([
-  [
-    "system",
-    "Extract and return the full text of the article at the given URL.",
-  ],
-  new MessagesPlaceholder("messages"),
-]);
-
-const chain = prompt.pipe(model);
 
 export const readArticleChain = RunnableLambda.from(
   async (userInput: string, config) => {

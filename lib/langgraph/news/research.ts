@@ -8,7 +8,7 @@ import { ChatOpenAI } from "@langchain/openai";
 
 import { TavilySearchResults } from "@langchain/community/tools/tavily_search";
 
-const model = new ChatOpenAI({
+const miniModel = new ChatOpenAI({
   model: "gpt-4o-mini",
   temperature: 0,
 });
@@ -22,7 +22,7 @@ const prompt = ChatPromptTemplate.fromMessages([
   new MessagesPlaceholder("messages"),
 ]);
 
-const llmWithTools = model.bindTools([tool]);
+const llmWithTools = miniModel.bindTools([tool]);
 
 const chain = prompt.pipe(llmWithTools);
 

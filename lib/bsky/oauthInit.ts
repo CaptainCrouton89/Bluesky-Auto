@@ -51,4 +51,8 @@ export async function initModules() {
   };
 }
 
-const APP_URL = "https://isx9y9-ip-136-24-64-186.tunnelmole.net";
+// Update the APP_URL to use a dynamic value if possible, or keep the current one
+const APP_URL =
+  typeof window !== "undefined"
+    ? window.location.origin
+    : "https://isx9y9-ip-136-24-64-186.tunnelmole.net";

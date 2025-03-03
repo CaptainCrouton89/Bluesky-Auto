@@ -1,4 +1,4 @@
-import { model } from "@/lib/model";
+import { miniModel } from "@/lib/model";
 import {
   ChatPromptTemplate,
   MessagesPlaceholder,
@@ -11,4 +11,4 @@ const reflectionPrompt = ChatPromptTemplate.fromMessages([
   ],
   new MessagesPlaceholder("messages"),
 ]);
-export const reflectionChain = reflectionPrompt.pipe(model);
+export const reflectionChain = reflectionPrompt.pipe(miniModel);

@@ -1,6 +1,7 @@
 import HeaderAuth from "@/components/header-auth";
 import { ThemeProvider } from "next-themes";
 import { Geist } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -40,6 +41,7 @@ export default function RootLayout({
                 </div>
               </nav>
               <div className="flex flex-col gap-20 max-w-5xl p-5">
+                <Toaster />
                 {children}
               </div>
 

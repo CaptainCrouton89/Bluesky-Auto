@@ -21,11 +21,13 @@ export async function postText(text: string, facets: any[] = []): Promise<any> {
 
 export async function getFollowers(username: string, token: string) {
   try {
+    const encodedUsername = encodeURIComponent(username);
     const followers = await fetch(
-      `https://bsky.social/xrpc/app.bsky.feed.getFollowers?actor=${username}`,
+      `https://button.us-west.host.bsky.network/xrpc/app.bsky.graph.getFollows?actor=${encodedUsername}&limit=5`,
       {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `DPoP ${token}`,
+          Dpop: `${token}`,
         },
       }
     );
