@@ -7,7 +7,7 @@ import { useRef } from "react";
 
 export default function BskyPage() {
   const usernameRef = useRef<HTMLInputElement>(null);
-  const { login } = useBlueskyAuth(usernameRef);
+  const { login, follows } = useBlueskyAuth(usernameRef);
 
   return (
     <div className="flex-1 flex flex-col w-full px-8 sm:max-w-md justify-center gap-2">
@@ -28,6 +28,12 @@ export default function BskyPage() {
           Click the button below to post "hey" to bsky.
         </p>
         <PostTextButton />
+        <div className="flex flex-col gap-2">
+          {follows.map((follow) => (
+            <div key={follow.handle}>{follow.handle}</div>
+          ))}
+          <Button onClick={() => console.log(follows)}>Log follows</Button>
+        </div>
       </div>
     </div>
   );
