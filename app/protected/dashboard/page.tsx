@@ -3,24 +3,22 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import toast from "react-hot-toast";
 
 export interface IDashboardProps {}
 
 export default function Dashboard(props: IDashboardProps) {
-  const textRef = useRef<HTMLInputElement>(null);
-  const toneRef = useRef<HTMLInputElement>(null);
+  const [text, setText] = useState<string>("");
+  const [tone, setTone] = useState<string>("");
   const [postContent, setPostContent] = useState<string | null>(null);
 
   const [loadingDraft, setLoadingDraft] = useState(false);
   const [loadingPost, setLoadingPost] = useState(false);
 
   const draftPost = useCallback(async () => {
-    if (textRef.current) {
+    if (text) {
       setLoadingDraft(true);
-      const text = textRef.current.value;
-      const tone = toneRef.current?.value;
       try {
         const response = await api.post("/api/protected/ai", { text, tone });
         toast.success(response.data.message);
@@ -31,7 +29,7 @@ export default function Dashboard(props: IDashboardProps) {
         setLoadingDraft(false);
       }
     }
-  }, []);
+  }, [text, tone]);
 
   const postOnSubject = useCallback(async () => {
     if (postContent) {
@@ -51,11 +49,21 @@ export default function Dashboard(props: IDashboardProps) {
   }, [postContent]);
 
   return (
-    <div className="flex flex-col items-center justify-center">
-      <Input placeholder="Post tone" ref={toneRef} className="mb-4" />
-      <Input placeholder="Post topic" ref={textRef} className="mb-4" />
+    <div className="flex flex-col items-center justify-center w-full">
+      <Input
+        placeholder="Post tone"
+        value={tone}
+        onChange={(e) => setTone(e.target.value.toLowerCase())}
+        className="mb-4"
+      />
+      <Input
+        placeholder="Post topic"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        className="mb-4"
+      />
       <Button
-        disabled={loadingDraft || !textRef.current?.value}
+        disabled={loadingDraft || !text}
         onClick={draftPost}
         className="mt-4 w-full bg-blue-500 text-white hover:bg-blue-600"
       >
@@ -68,9 +76,11 @@ export default function Dashboard(props: IDashboardProps) {
       >
         {loadingPost ? "Posting..." : "Post"}
       </Button>
-      <div className="mt-4 p-4 border border-gray-300 rounded-lg shadow-md bg-white w-96">
-        <p className="text-gray-800">{postContent}</p>
-      </div>
+      {postContent && (
+        <div className="mt-4 p-4 border border-gray-300 rounded-lg shadow-md bg-white w-full">
+          <p className="text-gray-800">{postContent}</p>
+        </div>
+      )}
     </div>
   );
 }

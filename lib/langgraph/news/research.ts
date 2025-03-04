@@ -1,46 +1,28 @@
 import { HumanMessage } from "@langchain/core/messages";
-import {
-  ChatPromptTemplate,
-  MessagesPlaceholder,
-} from "@langchain/core/prompts";
 import { RunnableLambda } from "@langchain/core/runnables";
-import { ChatOpenAI } from "@langchain/openai";
 
 import { TavilySearchResults } from "@langchain/community/tools/tavily_search";
 
-const miniModel = new ChatOpenAI({
-  model: "gpt-4o-mini",
-  temperature: 0,
-});
-
-const tool = new TavilySearchResults({
+const searchTool = new TavilySearchResults({
   maxResults: 5,
 });
 
-const prompt = ChatPromptTemplate.fromMessages([
-  ["system", "You are a helpful assistant."],
-  new MessagesPlaceholder("messages"),
-]);
-
-const llmWithTools = miniModel.bindTools([tool]);
-
-const chain = prompt.pipe(llmWithTools);
-
 export const newsChain = RunnableLambda.from(
   async (userInput: string, config) => {
-    const humanMessage = new HumanMessage(userInput);
-    const aiMsg = await chain.invoke(
-      {
-        messages: [humanMessage],
-      },
-      config || {}
-    );
-    const toolMsgs = await tool.batch(aiMsg.tool_calls || [], config);
-    return chain.invoke(
-      {
-        messages: [humanMessage, aiMsg, ...toolMsgs],
-      },
-      config
-    );
+    try {
+      const toolResponse = await searchTool.invoke(userInput);
+
+      if (!toolResponse) {
+        console.error("searchTool did not return content:", toolResponse);
+        throw new Error("Failed to fetch search results.");
+      }
+
+      return new HumanMessage(
+        `Here are the search results:\n\n${toolResponse}`
+      );
+    } catch (error) {
+      console.error("Error fetching search results:", error);
+      return "Failed to fetch the search results. Please try again.";
+    }
   }
 );
