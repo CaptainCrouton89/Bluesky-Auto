@@ -10,29 +10,67 @@ export interface IDashboardProps {}
 
 export default function Dashboard(props: IDashboardProps) {
   const textRef = useRef<HTMLInputElement>(null);
-  const [isPosting, setIsPosting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const toneRef = useRef<HTMLInputElement>(null);
   const [postContent, setPostContent] = useState<string | null>(null);
 
-  const handlePostOnSubject = useCallback(async () => {
+  const [loadingDraft, setLoadingDraft] = useState(false);
+  const [loadingPost, setLoadingPost] = useState(false);
+
+  const draftPost = useCallback(async () => {
     if (textRef.current) {
+      setLoadingDraft(true);
       const text = textRef.current.value;
-      const response = await api.post("/api/protected/bsky", { text });
-      toast.success(response.data.message);
-      setPostContent(response.data.result);
+      const tone = toneRef.current?.value;
+      try {
+        const response = await api.post("/api/protected/ai", { text, tone });
+        toast.success(response.data.message);
+        setPostContent(response.data.result);
+      } catch (error) {
+        toast.error("Failed to draft post");
+      } finally {
+        setLoadingDraft(false);
+      }
     }
   }, []);
 
+  const postOnSubject = useCallback(async () => {
+    if (postContent) {
+      setLoadingPost(true);
+      try {
+        const response = await api.post("/api/protected/bsky", {
+          text: postContent,
+        });
+        toast.success(response.data.message);
+        setPostContent(null);
+      } catch (error) {
+        toast.error("Failed to post on subject");
+      } finally {
+        setLoadingPost(false);
+      }
+    }
+  }, [postContent]);
+
   return (
-    <div>
-      <Input placeholder="Text to post" ref={textRef} />
+    <div className="flex flex-col items-center justify-center">
+      <Input placeholder="Post tone" ref={toneRef} className="mb-4" />
+      <Input placeholder="Post topic" ref={textRef} className="mb-4" />
       <Button
-        onClick={handlePostOnSubject}
-        className="mt-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow hover:bg-blue-700 transition duration-200"
+        disabled={loadingDraft || !textRef.current?.value}
+        onClick={draftPost}
+        className="mt-4 w-full bg-blue-500 text-white hover:bg-blue-600"
       >
-        Post
+        {loadingDraft ? "Generating..." : "Draft"}
       </Button>
-      {postContent && <p>{postContent}</p>}
+      <Button
+        disabled={loadingPost || !postContent}
+        onClick={postOnSubject}
+        className="mt-4 w-full bg-green-500 text-white hover:bg-green-600"
+      >
+        {loadingPost ? "Posting..." : "Post"}
+      </Button>
+      <div className="mt-4 p-4 border border-gray-300 rounded-lg shadow-md bg-white w-96">
+        <p className="text-gray-800">{postContent}</p>
+      </div>
     </div>
   );
 }
