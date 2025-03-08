@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       {
         messages: [
           new HumanMessage({
-            content: `Generate a ${tone} comment on the news that could be posted to bluesky. The comment should be no more than 280 characters.`,
+            content: `Generate a ${tone} comment on the article that could be posted to bluesky. The comment should be no more than 280 characters.`,
           }),
         ],
       },
